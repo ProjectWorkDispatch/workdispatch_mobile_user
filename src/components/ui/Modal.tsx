@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { WD } from '../../constants/theme';
+import Toast from 'react-native-toast-message';
 
 interface ModalProps {
   open: boolean;
@@ -19,6 +20,7 @@ interface ModalProps {
   footer?: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   closeOnBackdrop?: boolean;
+  scrollEnabled?: boolean;
 }
 
 export function Modal({
@@ -29,6 +31,7 @@ export function Modal({
   footer,
   size = 'md',
   closeOnBackdrop = true,
+  scrollEnabled = true,
 }: ModalProps) {
   return (
     <RNModal visible={open} transparent animationType="fade" onRequestClose={onClose}>
@@ -53,6 +56,7 @@ export function Modal({
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             nestedScrollEnabled
+            scrollEnabled={scrollEnabled}
           >
             {children}
           </ScrollView>
@@ -61,6 +65,7 @@ export function Modal({
           {footer && <View style={styles.footer}>{footer}</View>}
         </View>
       </View>
+      <Toast />
     </RNModal>
   );
 }

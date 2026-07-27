@@ -7,8 +7,8 @@ import { getMyServiceRequests } from '../../api/clientDashboard';
 import { WD } from '../../constants/theme';
 import { Button } from '../ui/Button';
 import { Card, CardContent } from '../ui/Card';
-import { Modal } from '../ui/Modal';
 import { DashboardStats, type StatItem } from './DashboardStats';
+import { NewServiceRequestModal } from './NewServiceRequestModal';
 
 type ServiceRequest = {
   _id: string;
@@ -148,25 +148,11 @@ export function ClientDashboardSummary() {
         </>
       )}
 
-      <Modal
+      <NewServiceRequestModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title="Nueva Solicitud"
-        footer={
-          <View style={styles.modalFooter}>
-            <Button variant="ghost" onPress={() => setOpenModal(false)}>
-              Cancelar
-            </Button>
-            <Button onPress={() => setOpenModal(false)}>
-              Guardar
-            </Button>
-          </View>
-        }
-      >
-        <Text style={styles.modalContent}>
-          Aqui va el formulario real de creacion de solicitud.
-        </Text>
-      </Modal>
+        onCreated={fetchData}
+      />
     </ScrollView>
   );
 }
@@ -253,13 +239,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#374151',
-  },
-  modalFooter: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  modalContent: {
-    fontSize: 14,
-    color: '#6B7280',
   },
 });
