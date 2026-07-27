@@ -2,15 +2,13 @@ import axios from 'axios';
 import { Platform } from 'react-native';
 import { useAuthStore } from '../store/authStore';
 
-const DEFAULT_API_URL = Platform.select({
-  android: 'http://10.0.2.2:3002/workDispatch/v1',
-  default: process.env.EXPO_PUBLIC_API_URL,
-})!;
+const DEFAULT_API_URL =
+  process.env.EXPO_PUBLIC_API_URL ??
+  Platform.select({ android: 'http://10.0.2.2:3002/workDispatch/v1', default: undefined })!;
 
-const AUTH_URL = Platform.select({
-  android: 'http://10.0.2.2:5149',
-  default: process.env.EXPO_PUBLIC_AUTH_URL,
-})!;
+const AUTH_URL =
+  process.env.EXPO_PUBLIC_AUTH_URL ??
+  Platform.select({ android: 'http://10.0.2.2:5149', default: undefined })!;
 
 const USER_URL = DEFAULT_API_URL;
 
@@ -157,3 +155,4 @@ axiosAuth.interceptors.response.use((res) => res, handleRefreshToken);
 axiosUser.interceptors.response.use((res) => res, handleRefreshToken);
 
 export { axiosAuth, axiosUser };
+
