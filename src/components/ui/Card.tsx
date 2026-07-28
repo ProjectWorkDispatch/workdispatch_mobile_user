@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, type ViewProps } from 'react-native';
+import { StyleSheet, Text, View, type ViewProps } from 'react-native';
 
 interface CardProps extends ViewProps {
   variant?: 'default' | 'yellow' | 'gray';
@@ -104,6 +104,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 24,
+    paddingTop: 24,
     paddingBottom: 24,
   },
   footer: {

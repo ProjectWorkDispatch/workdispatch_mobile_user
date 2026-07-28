@@ -63,9 +63,8 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="my-services"
           options={{
-            href: isClient ? undefined : null,
-            title: 'Contratos',
-            tabBarLabel: 'Contratos',
+            title: isClient ? 'Contratos' : 'Servicios',
+            tabBarLabel: isClient ? 'Contratos' : 'Servicios',
             tabBarIcon: ({ color, size }) => <Ionicons name="briefcase-outline" size={size} color={color} />,
           }}
         />

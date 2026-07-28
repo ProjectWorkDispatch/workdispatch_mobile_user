@@ -1,4 +1,4 @@
-import { axiosAuth } from './api';
+import { axiosAuth, axiosUser } from './api';
 
 const tryPostPaths = async (paths: string[], data: any, config: any = {}) => {
   let lastError: any;
@@ -28,11 +28,11 @@ const postAuth = async (endpoint: string, data: any, config: any = {}) => {
 };
 
 export const login = async (data: any) => {
-  return await postAuth('login', data);
+  return await axiosUser.post('/users/login', data);
 };
 
 export const register = async (data: any) => {
-  return await postAuth('register', data);
+  return await axiosUser.post('/users/register', data);
 };
 
 export const forgotPassword = async (email: string) => {

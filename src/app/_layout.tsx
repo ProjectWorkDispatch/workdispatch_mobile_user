@@ -21,6 +21,7 @@ export default function RootLayout() {
 
           <Stack.Protected guard={isAuthenticated}>
             <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="my-requests/[id]" />
           </Stack.Protected>
         </Stack>
 
