@@ -13,7 +13,7 @@ export const STATUS_LABELS: Record<string, string> = {
 };
 
 export const getCategoryName = (req: {
-  categoryId?: { name: string } | null;
+  categoryId?: string | { _id: string; name: string } | null;
   customCategory?: string | null;
 }): string => {
   if (req.categoryId && typeof req.categoryId === 'object') return req.categoryId.name;

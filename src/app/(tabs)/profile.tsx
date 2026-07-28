@@ -173,6 +173,11 @@ export default function ProfileScreen() {
   const currentPhoto = photoUri || (profile?.profilePhoto && !profile.profilePhoto.includes('default') ? profile.profilePhoto : null);
   const initials = `${form.firstName?.[0] ?? ''}${form.lastName?.[0] ?? ''}`.toUpperCase();
 
+  const menuItems = [
+    { label: 'Mis Reseñas', icon: 'star-outline' as const, onPress: () => router.push('../reviews') },
+    { label: 'Mis Reportes', icon: 'flag-outline' as const, onPress: () => router.push('../reports') },
+  ];
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Mi Perfil</Text>
@@ -243,7 +248,24 @@ export default function ProfileScreen() {
         </CardContent>
       </Card>
 
-      {/* Accesos rápidos */}
+      {/* Menú de navegación (reseñas y reportes) */}
+      <Card style={styles.card}>
+        <CardContent style={{ padding: 0 }}>
+          {menuItems.map((item, idx) => (
+            <TouchableOpacity
+              key={item.label}
+              onPress={item.onPress}
+              style={[styles.menuRow, idx === menuItems.length - 1 && styles.menuRowLast]}
+            >
+              <Ionicons name={item.icon} size={18} color="#6B7280" />
+              <Text style={styles.menuText}>{item.label}</Text>
+              <Ionicons name="chevron-forward" size={16} color="#D1D5DB" />
+            </TouchableOpacity>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Accesos rápidos (verificación) */}
       {isWorker && (
         <Card style={styles.card}>
           <CardContent style={{ gap: 8 }}>
@@ -411,6 +433,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   quickLinkText: { flex: 1, fontSize: 14, fontWeight: '600', color: '#374151' },
+  menuRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  menuRowLast: { borderBottomWidth: 0 },
+  menuText: { flex: 1, fontSize: 14, fontWeight: '600', color: '#374151' },
   emptyPortfolio: { alignItems: 'center', paddingVertical: 24, gap: 8 },
   emptyText: { fontSize: 14, color: WD.textGray },
   portfolioItem: { borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: WD.borderGray },

@@ -1,12 +1,11 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore, useIsClient } from '../../store/authStore';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WD } from '../../constants/theme';
-import { Badge } from '../ui/Card';
+import { useAuthStore, useIsClient } from '../../store/authStore';
 
 interface DashboardHeaderProps {
   onLogout?: () => void;
@@ -50,7 +49,7 @@ export function DashboardHeader({ onLogout }: DashboardHeaderProps) {
         <View style={styles.actions}>
           {/* Messages */}
           <TouchableOpacity
-            onPress={() => router.push('/(tabs)/messages')}
+            onPress={() => router.push('../messages')}
             style={styles.iconButton}
           >
             <Ionicons name="chatbubbles-outline" size={20} color="#D1D5DB" />
@@ -58,7 +57,7 @@ export function DashboardHeader({ onLogout }: DashboardHeaderProps) {
 
           {/* Notifications */}
           <TouchableOpacity
-            onPress={() => router.push('/(tabs)/notifications')}
+            onPress={() => router.push('../notifications')}
             style={styles.iconButton}
           >
             <Ionicons name="notifications-outline" size={20} color="#D1D5DB" />
@@ -66,7 +65,7 @@ export function DashboardHeader({ onLogout }: DashboardHeaderProps) {
 
 
           {/* Avatar - clickable to profile */}
-          <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
+          <TouchableOpacity onPress={() => router.push('../profile')}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{initials || '?'}</Text>
             </View>

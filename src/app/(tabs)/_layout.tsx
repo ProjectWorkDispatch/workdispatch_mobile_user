@@ -79,18 +79,18 @@ export default function TabsLayout() {
         />
         <Tabs.Screen name="messages" options={{ href: null }} />
         <Tabs.Screen name="notifications" options={{ href: null }} />
-        <Tabs.Screen name="profile" options={{ href: null }} />
-
+        <Tabs.Screen name="reviews" options={{ href: null }} />
+        <Tabs.Screen name="reports" options={{ href: null }} />
         <Tabs.Screen
-  name="profile"
-  options={{
-    title: 'Perfil',
-    tabBarLabel: 'Perfil',
-    tabBarIcon: ({ color, size }) => (
-      <Ionicons name="person-outline" size={size} color={color} />
-    ),
-  }}
-/>
+          name="profile"
+          options={{
+            title: 'Perfil',
+            tabBarLabel: 'Perfil',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="person-outline" size={size} color={color} />
+            ),
+          }}
+        />
       </Tabs>
     </View>
   );

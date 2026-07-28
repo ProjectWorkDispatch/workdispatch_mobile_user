@@ -172,7 +172,7 @@ export function MyRequestsList() {
             return (
               <TouchableOpacity
                 key={request._id}
-                onPress={() => router.push(`/my-requests/${request._id}`)}
+                onPress={() => router.push(`/my-requests/${request._id}` as any)}
                 activeOpacity={0.7}
               >
                 <Card>
