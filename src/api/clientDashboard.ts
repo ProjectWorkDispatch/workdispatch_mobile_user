@@ -25,3 +25,19 @@ export const getAiEstimate = async (payload: {
 }) => {
   return axiosUser.post('/ai/estimate', payload);
 };
+
+export const getServiceRequestById = async (id: string) => {
+  return axiosUser.get(`/serviceRequest/${id}`);
+};
+
+export const getProposalsForRequest = async (serviceRequestId: string) => {
+  return axiosUser.get(`/Proposal/requests/${serviceRequestId}`);
+};
+
+export const acceptProposal = async (proposalId: string) => {
+  return axiosUser.patch(`/Proposal/accept/${proposalId}`);
+};
+
+export const rejectProposal = async (proposalId: string, reason: string) => {
+  return axiosUser.patch(`/Proposal/reject/${proposalId}`, { reason });
+};

@@ -7,9 +7,10 @@ type MapPickerProps = {
   lat: string | null;
   lng: string | null;
   onLocationChange: (lat: number | null, lng: number | null) => void;
+  readOnly?: boolean;
 };
 
-export function MapPicker({ lat, lng, onLocationChange }: MapPickerProps) {
+export function MapPicker({ lat, lng, onLocationChange, readOnly = false }: MapPickerProps) {
   const initialLat = lat ? parseFloat(lat) : 14.6349;
   const initialLng = lng ? parseFloat(lng) : -90.5069;
   const hasPosition = lat !== null && lng !== null;
@@ -42,6 +43,7 @@ export function MapPicker({ lat, lng, onLocationChange }: MapPickerProps) {
             : ''
         }
 
+        ${readOnly ? '' : `
         map.on('click', function(e) {
           var lat = e.latlng.lat;
           var lng = e.latlng.lng;
@@ -52,6 +54,7 @@ export function MapPicker({ lat, lng, onLocationChange }: MapPickerProps) {
           }
           window.ReactNativeWebView.postMessage(JSON.stringify({ lat: lat, lng: lng }));
         });
+        `}
       </script>
     </body>
     </html>
@@ -75,9 +78,11 @@ export function MapPicker({ lat, lng, onLocationChange }: MapPickerProps) {
           <Text style={styles.coordinates}>
             Ubicación: {parseFloat(lat).toFixed(6)}, {parseFloat(lng).toFixed(6)}
           </Text>
-          <TouchableOpacity onPress={() => onLocationChange(null, null)}>
-            <Text style={styles.removeText}>Quitar ubicación</Text>
-          </TouchableOpacity>
+          {!readOnly && (
+            <TouchableOpacity onPress={() => onLocationChange(null, null)}>
+              <Text style={styles.removeText}>Quitar ubicación</Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : (
         <Text style={styles.hint}>Toca el mapa para seleccionar la ubicación</Text>
