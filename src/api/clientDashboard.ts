@@ -1,7 +1,9 @@
 import { axiosUser } from './api';
 
-export const getMyServiceRequests = async () => {
-  return axiosUser.get('/serviceRequest/mine');
+export const getMyServiceRequests = async (status?: string | null) => {
+  return axiosUser.get('/serviceRequest/mine', {
+    params: status ? { status } : undefined,
+  });
 };
 
 export const getCategories = async () => {

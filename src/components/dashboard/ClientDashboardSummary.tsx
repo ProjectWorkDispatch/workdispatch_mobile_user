@@ -5,6 +5,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-nat
 import Toast from 'react-native-toast-message';
 import { getMyServiceRequests } from '../../api/clientDashboard';
 import { WD } from '../../constants/theme';
+import { STATUS_COLORS, STATUS_LABELS, getCategoryName } from '../../utils/statusBadge';
 import { Button } from '../ui/Button';
 import { Card, CardContent } from '../ui/Card';
 import { DashboardStats, type StatItem } from './DashboardStats';
@@ -19,26 +20,6 @@ type ServiceRequest = {
   categoryId?: { _id: string; name: string } | string;
   customCategory?: string;
   createdAt: string;
-};
-
-const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  OPEN: { bg: '#FEF9C3', text: '#CA8A04', border: '#FDE68A' },
-  IN_PROGRESS: { bg: '#DBEAFE', text: '#1D4ED8', border: '#93C5FD' },
-  COMPLETED: { bg: '#D1FAE5', text: '#059669', border: '#6EE7B7' },
-  CANCELLED: { bg: '#F3F4F6', text: '#6B7280', border: '#D1D5DB' },
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  OPEN: 'Abierta',
-  IN_PROGRESS: 'En Progreso',
-  COMPLETED: 'Completada',
-  CANCELLED: 'Cancelada',
-};
-
-const getCategoryName = (req: ServiceRequest): string => {
-  if (req.categoryId && typeof req.categoryId === 'object') return req.categoryId.name;
-  if (req.customCategory) return req.customCategory;
-  return 'Sin categoría';
 };
 
 export function ClientDashboardSummary() {
