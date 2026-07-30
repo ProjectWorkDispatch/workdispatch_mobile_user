@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WD } from '../../constants/theme';
 import { useAuthStore, useIsClient } from '../../store/authStore';
+import { useNotificationsStore } from '../../store/userStore';
 
 interface DashboardHeaderProps {
   onLogout?: () => void;
@@ -17,6 +18,20 @@ export function DashboardHeader({ onLogout }: DashboardHeaderProps) {
   const { user } = useAuthStore();
   const isClient = useIsClient();
   const initials = `${user?.firstName?.[0] ?? ''}${user?.lastName?.[0] ?? ''}`.toUpperCase();
+
+  const notifications = useNotificationsStore((s) => s.notifications);
+  const getNotifications = useNotificationsStore((s) => s.getNotifications);
+  const currentUserId = user?._id || user?.id;
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  useEffect(() => {
+    if (!currentUserId) return;
+    getNotifications(currentUserId);
+    const interval = setInterval(() => {
+      getNotifications(currentUserId);
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [currentUserId]);
 
   const handleLogout = () => {
     onLogout?.();
@@ -55,14 +70,22 @@ export function DashboardHeader({ onLogout }: DashboardHeaderProps) {
             <Ionicons name="chatbubbles-outline" size={20} color="#D1D5DB" />
           </TouchableOpacity>
 
-          {/* Notifications */}
+          {/* Notifications with badge */}
           <TouchableOpacity
             onPress={() => router.push('../notifications')}
             style={styles.iconButton}
           >
-            <Ionicons name="notifications-outline" size={20} color="#D1D5DB" />
+            <View>
+              <Ionicons name="notifications-outline" size={20} color="#D1D5DB" />
+              {unreadCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </View>
           </TouchableOpacity>
-
 
           {/* Avatar - clickable to profile */}
           <TouchableOpacity onPress={() => router.push('../profile')}>
@@ -122,6 +145,23 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -6,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: WD.yellow,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: WD.darkerGray,
   },
   avatar: {
     width: 36,

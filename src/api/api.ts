@@ -128,10 +128,13 @@ const handleRefreshToken = async function (error: any) {
       }
 
       const { accessToken, refreshToken: newRefreshToken, expiresIn, userDetails } = response!.data;
+      const expiresAt = typeof expiresIn === 'number'
+        ? (expiresIn < 1e12 ? Date.now() + expiresIn * 1000 : expiresIn)
+        : null;
       useAuthStore.setState({
         token: accessToken,
         refreshToken: newRefreshToken,
-        expiresAt: expiresIn,
+        expiresAt,
         user: userDetails || useAuthStore.getState().user,
         isAuthenticated: true,
       });

@@ -35,26 +35,26 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="index"
           options={{
-            title: isClient ? 'Inicio' : 'Trabajos',
-            tabBarLabel: isClient ? 'Inicio' : 'Trabajos',
+            title: 'Inicio',
+            tabBarLabel: 'Inicio',
             tabBarIcon: ({ color, size }) => (
               <Ionicons name={isClient ? 'home-outline' : 'briefcase-outline'} size={size} color={color} />
             ),
           }}
         />
         <Tabs.Screen
-          name="my-requests"
-          options={{
-            href: isClient ? undefined : null,
-            title: 'Mis Solicitudes',
-            tabBarLabel: 'Solicitudes',
-            tabBarIcon: ({ color, size }) => <Ionicons name="clipboard-outline" size={size} color={color} />,
-          }}
-        />
-        <Tabs.Screen
           name="find-workers"
           options={{
             href: isClient ? undefined : null,
+            title: 'Buscar',
+            tabBarLabel: 'Buscar',
+            tabBarIcon: ({ color, size }) => <Ionicons name="search-outline" size={size} color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="find-jobs"
+          options={{
+            href: isClient ? null : undefined,
             title: 'Buscar',
             tabBarLabel: 'Buscar',
             tabBarIcon: ({ color, size }) => <Ionicons name="search-outline" size={size} color={color} />,
@@ -71,7 +71,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="my-offers"
           options={{
-            href: isClient ? null : undefined,
+            href: null,
             title: 'Mis Ofertas',
             tabBarLabel: 'Ofertas',
             tabBarIcon: ({ color, size }) => <Ionicons name="document-text-outline" size={size} color={color} />,

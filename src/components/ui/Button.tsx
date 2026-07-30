@@ -179,18 +179,21 @@ function Content({
       {!loading && icon && iconPosition === 'left' && (
         <React.Fragment>{icon}</React.Fragment>
       )}
-      {typeof children === 'string' ? (
-        <Text
-          style={[
-            { color: textColor, fontSize: TEXT_SIZES[size], fontWeight: '600' },
-            textStyle,
-          ]}
-        >
-          {children}
-        </Text>
-      ) : (
-        children
-      )}
+      {React.Children.map(children, (child) => {
+        if (typeof child === 'string' || typeof child === 'number') {
+          return (
+            <Text
+              style={[
+                { color: textColor, fontSize: TEXT_SIZES[size], fontWeight: '600' },
+                textStyle,
+              ]}
+            >
+              {child}
+            </Text>
+          );
+        }
+        return child;
+      })}
       {!loading && icon && iconPosition === 'right' && (
         <React.Fragment>{icon}</React.Fragment>
       )}

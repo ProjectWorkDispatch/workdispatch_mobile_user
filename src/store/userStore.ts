@@ -14,6 +14,7 @@ interface MessagesState {
   startConversation: (user1Id: string, user2Id: string) => Promise<Conversation | null>;
   selectConversation: (conversation: Conversation) => Promise<void>;
   sendMessage: (conversationId: string, senderId: string, content: string) => Promise<void>;
+  receiveMessage: (message: Message, conversationId: string) => void;
   setSelectedConversation: (conversation: Conversation | null) => void;
   clearError: () => void;
 }
@@ -85,7 +86,26 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
       throw error;
     }
   },
+  receiveMessage: (message, conversationId) => {
+    const { selectedConversation, messages, conversations } = get();
 
+    set({
+      conversations: conversations.some((c) => c._id === conversationId)
+        ? conversations.map((c) =>
+            c._id === conversationId
+              ? { ...c, lastMessage: message.content, lastMessageAt: message.createdAt }
+              : c
+          )
+        : conversations,
+    });
+
+    if (selectedConversation?._id === conversationId) {
+      const alreadyExists = messages.some((m) => m._id === message._id);
+      if (!alreadyExists) {
+        set({ messages: [...messages, message] });
+      }
+    }
+  },
   setSelectedConversation: (conversation) => set({ selectedConversation: conversation }),
   clearError: () => set({ error: null }),
 }));
@@ -228,6 +248,58 @@ export const useReportsStore = create<ReportsState>((set, get) => ({
       const message = error.response?.data?.message || 'Error al enviar el reporte';
       set({ error: message, loading: false });
       return { success: false, error: message };
+    }
+  },
+
+  clearError: () => set({ error: null }),
+}));
+
+// ================= FAVORITES STORE =================
+interface Favorite {
+  _id: string;
+  workerId: { _id: string; firstName: string; lastName: string } | string;
+  clientId: string;
+}
+
+interface FavoritesState {
+  favorites: Favorite[];
+  loading: boolean;
+  error: string | null;
+  getMyFavorites: (clientId: string) => Promise<void>;
+  toggleFavorite: (clientId: string, workerId: string) => Promise<{ success: boolean; error?: string }>;
+  clearError: () => void;
+}
+
+export const useFavoritesStore = create<FavoritesState>((set, get) => ({
+  favorites: [],
+  loading: false,
+  error: null,
+
+  getMyFavorites: async (clientId) => {
+    try {
+      set({ loading: true, error: null });
+      const res = await api.getMyFavorites(clientId);
+      set({ favorites: res.data?.favorites || [], loading: false });
+    } catch (error: any) {
+      set({ error: error.response?.data?.message || 'Error al obtener favoritos', loading: false });
+    }
+  },
+
+  toggleFavorite: async (clientId, workerId) => {
+    const getFavWorkerId = (f: Favorite): string =>
+      typeof f.workerId === 'object' ? f.workerId._id : f.workerId;
+    const isFav = get().favorites.some((f) => getFavWorkerId(f) === workerId);
+    try {
+      if (isFav) {
+        await api.removeFavorite(clientId, workerId);
+        set({ favorites: get().favorites.filter((f) => getFavWorkerId(f) !== workerId) });
+      } else {
+        const res = await api.addFavorite(clientId, workerId);
+        set({ favorites: [...get().favorites, res.data.favorite] });
+      }
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.response?.data?.message || 'Error al actualizar favoritos' };
     }
   },
 

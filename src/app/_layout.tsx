@@ -6,9 +6,11 @@ import Toast from 'react-native-toast-message';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAuthStore } from '../store/authStore';
 import { WD } from '../constants/theme';
+import { useSocketConnection } from '../hooks/useSocketConnection';
 
 export default function RootLayout() {
   const { isAuthenticated, isLoadingAuth } = useAuthStore();
+  useSocketConnection();
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -22,6 +24,9 @@ export default function RootLayout() {
           <Stack.Protected guard={isAuthenticated}>
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="my-requests/[id]" />
+            <Stack.Screen name="my-services/[id]" />
+            <Stack.Screen name="my-offers/[id]" />
+            <Stack.Screen name="worker-service/[id]" />
           </Stack.Protected>
         </Stack>
 

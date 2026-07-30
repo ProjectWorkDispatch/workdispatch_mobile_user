@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { axiosUser } from '../../api/api';
+import { getSkillsCatalog, addUserSkill, getWorkerSkills } from '../../api/workerDashboard';
 import { Button } from '../../components/ui/Button';
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Modal } from '../../components/ui/Modal';
@@ -38,6 +39,13 @@ export default function ProfileScreen() {
   const [portfolioImg, setPortfolioImg] = useState<any>(null);
   const [savingPortfolio, setSavingPortfolio] = useState(false);
 
+  const [skillsCatalog, setSkillsCatalog] = useState<any[]>([]);
+  const [mySkills, setMySkills] = useState<any[]>([]);
+  const [selectedSkillId, setSelectedSkillId] = useState('');
+  const [experienceYears, setExperienceYears] = useState('1');
+  const [skillModal, setSkillModal] = useState(false);
+  const [savingSkill, setSavingSkill] = useState(false);
+
   useEffect(() => {
     if (!userId) return;
     const fetchData = async () => {
@@ -55,6 +63,12 @@ export default function ProfileScreen() {
         if (isWorker) {
           const pRes = await axiosUser.get(`/PortFolio/my/${userId}`).catch(() => ({ data: { data: [] } }));
           setPortfolio(pRes.data?.data || []);
+          const [skillsRes, catalogRes] = await Promise.all([
+            getWorkerSkills(userId),
+            getSkillsCatalog(),
+          ]);
+          setMySkills(skillsRes.data?.data || skillsRes.data?.skills || []);
+          setSkillsCatalog(catalogRes.data?.data || catalogRes.data?.skills || []);
         }
       } catch {
         Toast.show({ type: 'error', text1: 'Error al cargar el perfil' });
@@ -149,6 +163,31 @@ export default function ProfileScreen() {
       Toast.show({ type: 'error', text1: err.response?.data?.message || 'Error al guardar' });
     } finally {
       setSavingPortfolio(false);
+    }
+  };
+
+  const handleAddSkill = async () => {
+    if (!selectedSkillId) {
+      Toast.show({ type: 'error', text1: 'Seleccioná una habilidad' });
+      return;
+    }
+    const years = parseInt(experienceYears, 10);
+    if (years < 0 || years > 50) {
+      Toast.show({ type: 'error', text1: 'Años de experiencia inválidos' });
+      return;
+    }
+    try {
+      setSavingSkill(true);
+      const res = await addUserSkill({ userId, skillId: selectedSkillId, experienceYears: years });
+      setMySkills(prev => [res.data?.data || res.data, ...prev]);
+      setSelectedSkillId('');
+      setExperienceYears('1');
+      setSkillModal(false);
+      Toast.show({ type: 'success', text1: 'Habilidad agregada' });
+    } catch (err: any) {
+      Toast.show({ type: 'error', text1: err.response?.data?.message || 'Error al agregar habilidad' });
+    } finally {
+      setSavingSkill(false);
     }
   };
 
@@ -281,6 +320,48 @@ export default function ProfileScreen() {
         </Card>
       )}
 
+      {/* Habilidades */}
+      {isWorker && (
+        <Card style={styles.card}>
+          <CardHeader>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <CardTitle>Habilidades</CardTitle>
+              <Button size="sm" onPress={() => setSkillModal(true)}>
+                <Ionicons name="add" size={16} color={WD.darkerGray} />
+                Agregar
+              </Button>
+            </View>
+            <CardDescription>Conocimientos y oficios que dominás</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {mySkills.length === 0 ? (
+              <View style={{ alignItems: 'center', paddingVertical: 16, gap: 8 }}>
+                <Ionicons name="construct-outline" size={28} color="#D1D5DB" />
+                <Text style={{ fontSize: 14, color: '#9CA3AF' }}>Sin habilidades registradas</Text>
+                <Button size="sm" variant="outline" onPress={() => setSkillModal(true)}>
+                  Agregar primera habilidad
+                </Button>
+              </View>
+            ) : (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {mySkills.map((skill) => {
+                  const skillName = skill.skillId?.name || skill.name || 'Habilidad';
+                  const years = skill.experienceYears;
+                  return (
+                    <View key={skill._id} style={styles.skillChip}>
+                      <Text style={styles.skillChipText}>
+                        {skillName}
+                        {years ? ` • ${years}años` : ''}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Portafolio */}
       {isWorker && (
         <Card style={[styles.card, { marginBottom: 20 }]}>
@@ -342,6 +423,83 @@ export default function ProfileScreen() {
           </CardContent>
         </Card>
       )}
+
+      {/* Modal habilidades */}
+      <Modal
+        open={skillModal}
+        onClose={() => setSkillModal(false)}
+        title="Agregar habilidad"
+        footer={
+          <>
+            <Button variant="ghost" onPress={() => setSkillModal(false)}>Cancelar</Button>
+            <Button onPress={handleAddSkill} loading={savingSkill}>
+              {savingSkill ? 'Guardando...' : 'Agregar'}
+            </Button>
+          </>
+        }
+      >
+        <View style={{ gap: 16 }}>
+          <View>
+            <Text style={styles.fieldLabel}>Habilidad</Text>
+            <ScrollView
+              horizontal={false}
+              style={{ maxHeight: 180, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 8, backgroundColor: WD.white }}
+            >
+              {skillsCatalog.length === 0 ? (
+                <View style={{ padding: 16, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 13, color: '#9CA3AF' }}>No hay habilidades disponibles</Text>
+                </View>
+              ) : (
+                skillsCatalog.map((skill) => {
+                  const isSelected = selectedSkillId === skill._id;
+                  const alreadyHas = mySkills.some((s) => {
+                    const sid = s.skillId?._id || s.skillId;
+                    return sid === skill._id;
+                  });
+                  return (
+                    <TouchableOpacity
+                      key={skill._id}
+                      disabled={alreadyHas}
+                      onPress={() => setSelectedSkillId(skill._id)}
+                      style={[
+                        styles.skillOption,
+                        isSelected && styles.skillOptionActive,
+                        alreadyHas && { opacity: 0.4 },
+                      ]}
+                    >
+                      <Ionicons
+                        name={isSelected ? 'radio-button-on' : alreadyHas ? 'checkmark-circle' : 'radio-button-off'}
+                        size={18}
+                        color={isSelected ? WD.yellow : alreadyHas ? '#9CA3AF' : '#D1D5DB'}
+                      />
+                      <Text
+                        style={[
+                          { fontSize: 14, color: '#374151', flex: 1 },
+                          alreadyHas && { color: '#9CA3AF' },
+                        ]}
+                      >
+                        {skill.name}
+                        {alreadyHas ? ' (ya agregada)' : ''}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })
+              )}
+            </ScrollView>
+          </View>
+          <View>
+            <Text style={styles.fieldLabel}>Años de experiencia</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej: 3"
+              placeholderTextColor={WD.textGray}
+              keyboardType="number-pad"
+              value={experienceYears}
+              onChangeText={v => setExperienceYears(v.replace(/[^0-9]/g, ''))}
+            />
+          </View>
+        </View>
+      </Modal>
 
       <Button variant="destructive" fullWidth onPress={() => { logout(); }} style={{ marginBottom: 40 }}>
         Cerrar Sesión
@@ -449,4 +607,21 @@ const styles = StyleSheet.create({
     backgroundColor: WD.white,
   },
   imagePickerFilled: { borderColor: WD.green, backgroundColor: '#F0FDF4' },
+  skillChip: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 12, paddingVertical: 6,
+    borderRadius: 20, backgroundColor: '#FEF9C3',
+    borderWidth: 1, borderColor: '#FDE68A',
+  },
+  skillChipText: {
+    fontSize: 13, fontWeight: '600', color: '#92400E',
+  },
+  skillOption: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 14, paddingVertical: 12,
+    borderBottomWidth: 1, borderBottomColor: '#F3F4F6',
+  },
+  skillOptionActive: {
+    backgroundColor: '#FEFCE8',
+  },
 });

@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card, CardContent } from '../../components/ui/Card';
 import { WD } from '../../constants/theme';
@@ -9,6 +10,7 @@ import { useReportsStore } from '../../store/userStore';
 
 export default function ReportsScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { user } = useAuthStore();
   const currentUserId = (user?._id || user?.id) as string;
   const { createdReports, loading, getMyReports } = useReportsStore();
@@ -19,6 +21,11 @@ export default function ReportsScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} style={styles.back}>
+        <Ionicons name="arrow-back" size={20} color="#374151" />
+        <Text style={styles.backText}>Volver a Perfil</Text>
+      </TouchableOpacity>
+
       <View style={styles.header}>
         <Text style={styles.title}>Mis Reportes</Text>
         <Text style={styles.subtitle}>Reportes que has enviado y su estado</Text>
@@ -65,6 +72,8 @@ export default function ReportsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: WD.lightGray },
+  back: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 },
+  backText: { fontSize: 14, color: '#374151', fontWeight: '500' },
   header: { padding: 16, paddingBottom: 8 },
   title: { fontSize: 22, fontWeight: '900', color: '#111827' },
   subtitle: { fontSize: 13, color: '#6B7280', marginTop: 2 },

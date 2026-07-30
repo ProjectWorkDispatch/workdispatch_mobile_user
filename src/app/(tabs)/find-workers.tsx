@@ -13,6 +13,8 @@ import {
 import { axiosUser } from '../../api/api';
 import { Badge, Card, CardContent } from '../../components/ui/Card';
 import { WD } from '../../constants/theme';
+import { useAuthStore } from '../../store/authStore';
+import { useFavoritesStore } from '../../store/userStore';
 
 const StarRow = ({ rating = 0 }: { rating: number }) => (
   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
@@ -32,10 +34,14 @@ const StarRow = ({ rating = 0 }: { rating: number }) => (
 
 export default function FindWorkersScreen() {
   const router = useRouter();
+  const { user } = useAuthStore();
+  const currentUserId = user?._id || user?.id;
+  const { favorites, getMyFavorites, toggleFavorite } = useFavoritesStore();
   const [workers, setWorkers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterRating, setFilterRating] = useState(0);
+  const [viewMode, setViewMode] = useState<'todos' | 'favoritos'>('todos');
 
   useEffect(() => {
     axiosUser.get('/users')
@@ -47,18 +53,29 @@ export default function FindWorkersScreen() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (currentUserId) getMyFavorites(currentUserId);
+  }, [currentUserId]);
+
+  const isFavorited = (workerId: string) =>
+    favorites.some((f) => {
+      const wid = typeof f.workerId === 'object' ? f.workerId._id : f.workerId;
+      return wid === workerId;
+    });
+
   const filtered = workers.filter(w => {
     const matchSearch = !search ||
       `${w.firstName} ${w.lastName}`.toLowerCase().includes(search.toLowerCase()) ||
       w.address?.toLowerCase().includes(search.toLowerCase());
     const matchRating = !filterRating || w.ratingAverage >= filterRating;
-    return matchSearch && matchRating;
+    const matchFav = viewMode !== 'favoritos' || isFavorited(w._id);
+    return matchSearch && matchRating && matchFav;
   });
 
   const ratingFilters = [
     { label: 'Todos', value: 0 },
-    { label: '4+★', value: 4 },
-    { label: '3+★', value: 3 },
+    { label: '4+\u2605', value: 4 },
+    { label: '3+\u2605', value: 3 },
   ];
 
   return (
@@ -79,6 +96,31 @@ export default function FindWorkersScreen() {
           value={search}
           onChangeText={setSearch}
         />
+      </View>
+
+      {/* View mode tabs */}
+      <View style={styles.viewModeRow}>
+        <TouchableOpacity
+          onPress={() => setViewMode('todos')}
+          style={[styles.viewModeChip, viewMode === 'todos' && styles.viewModeChipActive]}
+        >
+          <Text style={[styles.viewModeText, viewMode === 'todos' && styles.viewModeTextActive]}>
+            Todos
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setViewMode('favoritos')}
+          style={[styles.viewModeChip, viewMode === 'favoritos' && styles.viewModeChipActive]}
+        >
+          <Ionicons
+            name={viewMode === 'favoritos' ? 'heart' : 'heart-outline'}
+            size={14}
+            color={viewMode === 'favoritos' ? WD.white : WD.textGray}
+          />
+          <Text style={[styles.viewModeText, viewMode === 'favoritos' && styles.viewModeTextActive]}>
+            Favoritos ({favorites.length})
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Filtros rating */}
@@ -109,7 +151,11 @@ export default function FindWorkersScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="people-outline" size={48} color="#D1D5DB" />
-              <Text style={styles.emptyText}>No se encontraron trabajadores</Text>
+              <Text style={styles.emptyText}>
+                {viewMode === 'favoritos'
+                  ? 'No tienes trabajadores favoritos'
+                  : 'No se encontraron trabajadores'}
+              </Text>
             </View>
           }
           renderItem={({ item }) => {
@@ -139,9 +185,9 @@ export default function FindWorkersScreen() {
                         <Text style={styles.workerName}>
                           {item.firstName} {item.lastName}
                         </Text>
-                        {item.verificationStatus && (
+                        {!!item.verificationStatus && (
                           <Badge variant="default" style={{ paddingHorizontal: 6 }}>
-                            ✓ Verificado
+                            {'✓ Verificado'}
                           </Badge>
                         )}
                       </View>
@@ -156,6 +202,24 @@ export default function FindWorkersScreen() {
                         <Text style={styles.workerDesc} numberOfLines={2}>{item.description}</Text>
                       )}
                     </View>
+
+                    {/* Favorite button */}
+                    {currentUserId && (
+                      <TouchableOpacity
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          if (currentUserId) toggleFavorite(currentUserId, item._id);
+                        }}
+                        style={styles.heartButton}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Ionicons
+                          name={isFavorited(item._id) ? 'heart' : 'heart-outline'}
+                          size={22}
+                          color={isFavorited(item._id) ? '#EF4444' : '#9CA3AF'}
+                        />
+                      </TouchableOpacity>
+                    )}
                   </CardContent>
                 </Card>
               </TouchableOpacity>
@@ -180,6 +244,20 @@ const styles = StyleSheet.create({
   },
   searchIcon: { marginRight: 8 },
   searchInput: { flex: 1, paddingVertical: 10, fontSize: 14, color: '#111827' },
+  viewModeRow: {
+    flexDirection: 'row', gap: 8, marginBottom: 12,
+  },
+  viewModeChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 14, paddingVertical: 6,
+    borderRadius: 999, borderWidth: 1, borderColor: WD.borderGray,
+    backgroundColor: WD.white,
+  },
+  viewModeChipActive: {
+    backgroundColor: WD.yellow, borderColor: WD.yellow,
+  },
+  viewModeText: { fontSize: 12, fontWeight: '600', color: '#374151' },
+  viewModeTextActive: { color: WD.darkerGray },
   filters: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   filterChip: {
     paddingHorizontal: 14, paddingVertical: 6,
@@ -199,6 +277,12 @@ const styles = StyleSheet.create({
   workerName: { fontSize: 15, fontWeight: '700', color: '#111827', flex: 1 },
   workerAddr: { fontSize: 12, color: WD.textGray, flex: 1 },
   workerDesc: { fontSize: 12, color: WD.textGray, marginTop: 4, lineHeight: 17 },
+  heartButton: {
+    width: 36, height: 36,
+    borderRadius: 18,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.8)',
+  },
   empty: { alignItems: 'center', paddingTop: 60, gap: 12 },
   emptyText: { fontSize: 15, color: WD.textGray, fontWeight: '600' },
 });

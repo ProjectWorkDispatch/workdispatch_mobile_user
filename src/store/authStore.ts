@@ -8,6 +8,16 @@ import type { User, UserRole } from '../types/auth';
 
 const ALLOWED_ROLES: UserRole[] = ['CLIENT', 'WORKER'];
 
+/**
+ * Normaliza expiresIn a un timestamp absoluto en milisegundos.
+ * Acepta: duración en segundos (number < 1e12) o timestamp ya absoluto.
+ */
+function toAbsoluteExpiresAt(value: unknown): number | null {
+  if (typeof value !== 'number' || Number.isNaN(value)) return null;
+  // Si es menor a 1e12, asumimos que es duración en segundos (JWT expiresIn)
+  return value < 1e12 ? Date.now() + value * 1000 : value;
+}
+
 /** Normaliza el objeto user para que user.role sea siempre 'CLIENT' | 'WORKER' en mayúsculas. */
 function normalizeUser(raw: any): User | null {
   if (!raw || typeof raw !== 'object') return null;
@@ -47,7 +57,24 @@ export const useAuthStore = create<AuthState>()(
       checkAuth: () => {
         const token = get().token;
         const rawUser = get().user;
+        const expiresAt = get().expiresAt;
         const user = normalizeUser(rawUser);
+
+        // Check token expiration before anything else
+        if (token && expiresAt && expiresAt < Date.now()) {
+          set({ loading: false, error: null, isLoadingAuth: false });
+          get().logout();
+          set({
+            user: null,
+            token: null,
+            refreshToken: null,
+            expiresAt: null,
+            isAuthenticated: false,
+            isLoadingAuth: false,
+            error: 'La sesión ha expirado. Inicia sesión nuevamente.',
+          });
+          return;
+        }
 
         // Re-normalize persisted user on rehydration
         if (rawUser && !user) {
@@ -106,7 +133,7 @@ export const useAuthStore = create<AuthState>()(
           const user = normalizeUser(rawUser);
           const accessToken = data?.accessToken || data?.token;
           const refreshToken = data?.refreshToken || data?.refresh_token;
-          const expiresAt = data?.expiresIn || data?.expiresAt || data?.expiration;
+          const expiresAt = toAbsoluteExpiresAt(data?.expiresIn || data?.expiresAt || data?.expiration);
 
           if (!user) {
             const message = 'No tienes permisos para acceder a esta sección';
