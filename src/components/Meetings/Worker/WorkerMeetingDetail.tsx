@@ -289,9 +289,19 @@ export function WorkerMeetingDetail({ meetingId }: { meetingId: string }) {
                   style={styles.meetLink}
                   onPress={() => Linking.openURL(meeting.meetLink)}
                 >
-                  Abrir Google Meet
+                  Abrir videollamada
                 </Text>
               )}
+              <Button
+                size="sm"
+                variant="ghost"
+                onPress={handleCancel}
+                disabled={meetingLoading}
+                icon={<Ionicons name="close-outline" size={14} color="#B91C1C" />}
+                style={{ marginTop: 4 }}
+              >
+                Cancelar reunión
+              </Button>
             </View>
           ) : (
             <View style={styles.meetingPending}>

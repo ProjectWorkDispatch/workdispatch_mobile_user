@@ -369,7 +369,7 @@ export function WorkerProposalDetail({ proposalId }: { proposalId: string }) {
                     style={styles.meetLink}
                     onPress={() => Linking.openURL(meeting.meetLink)}
                   >
-                    Abrir Google Meet
+                    Abrir videollamada
                   </Text>
                 )}
               </View>
