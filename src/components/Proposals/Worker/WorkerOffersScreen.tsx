@@ -1,22 +1,22 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import Toast from 'react-native-toast-message';
 import { WD } from '../../../constants/theme';
-import { getWorkerProposals } from '../../../api/workerDashboard';
+import { getWorkerProposals, getProposalMeeting, confirmMeeting, proposeAlternativeTime, cancelMeeting } from '../../../api/workerDashboard';
 import { useAuthStore } from '../../../store/authStore';
 import type { User } from '../../../types/auth';
-import { WorkerRequestDetailsModal } from '../../dashboard/Worker/WorkerRequestDetailsModal';
+import { DateTimePickerModal } from '../../ui/DateTimePickerModal';
 
 type AnyRecord = Record<string, any>;
 
 const getArrayFromResponse = (response: any, keys: string[] = []) => {
   const payload = response?.data;
   if (Array.isArray(payload)) return payload;
-
   for (const key of keys) {
     if (Array.isArray(payload?.[key])) return payload[key];
   }
-
   if (Array.isArray(payload?.data)) return payload.data;
   return [];
 };
@@ -26,7 +26,6 @@ const getUserId = (user: User | null) => String(user?.id || user?._id || user?.u
 const formatMoney = (value: any) => {
   const amount = Number(value);
   if (!Number.isFinite(amount)) return 'Por definir';
-
   return new Intl.NumberFormat('es-GT', {
     style: 'currency',
     currency: 'GTQ',
@@ -38,12 +37,21 @@ const formatDate = (value: any) => {
   if (!value) return 'Sin fecha';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return 'Sin fecha';
-
   return new Intl.DateTimeFormat('es-GT', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
   }).format(date);
+};
+
+const formatDateTime = (iso?: string | null) => {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  return new Intl.DateTimeFormat('es-GT', {
+    dateStyle: 'full',
+    timeStyle: 'short',
+  }).format(d);
 };
 
 const getStatusLabel = (status: string) => {
@@ -53,7 +61,6 @@ const getStatusLabel = (status: string) => {
     REJECTED: 'Rechazada',
     CANCELLED: 'Cancelada',
   };
-
   return labels[status] || status || 'Pendiente';
 };
 
@@ -64,7 +71,6 @@ const getStatusStyle = (status: string) => {
     REJECTED: { wrap: { backgroundColor: '#FEE2E2', borderColor: '#FECACA' }, text: { color: '#B91C1C' } },
     CANCELLED: { wrap: { backgroundColor: '#F3F4F6', borderColor: '#E5E7EB' }, text: { color: '#4B5563' } },
   };
-
   return styles[status] || { wrap: { backgroundColor: '#F3F4F6', borderColor: '#E5E7EB' }, text: { color: '#4B5563' } };
 };
 
@@ -89,41 +95,109 @@ const FILTERS = [
 ];
 
 export function WorkerOffersScreen() {
+  const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const workerId = getUserId(user);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [proposals, setProposals] = useState<AnyRecord[]>([]);
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const [selectedRequest, setSelectedRequest] = useState<AnyRecord | null>(null);
+  const [meetingsByProposal, setMeetingsByProposal] = useState<Record<string, any>>({});
+  const [meetingLoading, setMeetingLoading] = useState(false);
+  const [pickerTarget, setPickerTarget] = useState<{ meetingId: string; proposalId: string } | null>(null);
+
+  const loadProposals = useCallback(async () => {
+    if (!workerId) return;
+    setLoading(true);
+    setError('');
+    try {
+      const response = await getWorkerProposals(workerId);
+      setProposals(getArrayFromResponse(response, ['proposals']));
+    } catch (loadError: any) {
+      setError(loadError?.response?.data?.message || 'No se pudieron cargar tus ofertas.');
+    } finally {
+      setLoading(false);
+    }
+  }, [workerId]);
 
   useEffect(() => {
-    if (!workerId) return;
+    loadProposals();
+  }, [loadProposals]);
 
-    let mounted = true;
-
-    const loadOffers = async () => {
-      setLoading(true);
-      setError('');
-
+  const loadMeetings = useCallback(async () => {
+    if (!proposals.length) return;
+    for (const proposal of proposals) {
       try {
-        const response = await getWorkerProposals(workerId);
-        if (!mounted) return;
-        setProposals(getArrayFromResponse(response, ['proposals']));
-      } catch (loadError: any) {
-        if (!mounted) return;
-        setError(loadError?.response?.data?.message || 'No se pudieron cargar tus ofertas.');
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
+        const res = await getProposalMeeting(proposal._id);
+        if (res.data.data) {
+          setMeetingsByProposal((prev) => ({ ...prev, [proposal._id]: res.data.data }));
+        }
+      } catch {}
+    }
+  }, [proposals]);
 
-    loadOffers();
+  useEffect(() => {
+    loadMeetings();
+  }, [loadMeetings]);
 
-    return () => {
-      mounted = false;
-    };
-  }, [workerId]);
+  const handleConfirmMeeting = async (meetingId: string, proposalId: string) => {
+    setMeetingLoading(true);
+    try {
+      const res = await confirmMeeting(meetingId);
+      Toast.show({ type: 'success', text1: 'Asistencia confirmada' });
+      setMeetingsByProposal((prev) => ({ ...prev, [proposalId]: res.data.data }));
+    } catch (err: any) {
+      Toast.show({
+        type: 'error',
+        text1: err.response?.data?.message || 'Error al confirmar asistencia',
+      });
+    } finally {
+      setMeetingLoading(false);
+    }
+  };
+
+  const handleProposeTime = async (isoDate: string) => {
+    if (!pickerTarget) return;
+    const { meetingId, proposalId } = pickerTarget;
+    setPickerTarget(null);
+    setMeetingLoading(true);
+    try {
+      const res = await proposeAlternativeTime(meetingId, isoDate);
+      Toast.show({ type: 'success', text1: 'Nuevo horario propuesto' });
+      setMeetingsByProposal((prev) => ({ ...prev, [proposalId]: res.data.data }));
+    } catch (err: any) {
+      Toast.show({
+        type: 'error',
+        text1: err.response?.data?.message || 'Error al proponer horario',
+      });
+    } finally {
+      setMeetingLoading(false);
+    }
+  };
+
+  const handleCancelMeeting = async (meetingId: string) => {
+    setMeetingLoading(true);
+    try {
+      await cancelMeeting(meetingId);
+      Toast.show({ type: 'success', text1: 'Entrevista cancelada' });
+      setMeetingsByProposal((prev) => {
+        const next = { ...prev };
+        for (const key of Object.keys(next)) {
+          if (next[key]._id === meetingId) {
+            next[key] = { ...next[key], status: 'CANCELLED' };
+          }
+        }
+        return next;
+      });
+    } catch (err: any) {
+      Toast.show({
+        type: 'error',
+        text1: err.response?.data?.message || 'Error al cancelar entrevista',
+      });
+    } finally {
+      setMeetingLoading(false);
+    }
+  };
 
   const counts = useMemo(() => {
     return proposals.reduce<Record<string, number>>(
@@ -141,6 +215,78 @@ export function WorkerOffersScreen() {
     if (statusFilter === 'ALL') return proposals;
     return proposals.filter((proposal) => proposal?.status === statusFilter);
   }, [proposals, statusFilter]);
+
+  const renderMeeting = (proposal: AnyRecord) => {
+    const meeting = meetingsByProposal[proposal._id];
+    if (!meeting || meeting.status === 'CANCELLED') return null;
+
+    const formattedTime = formatDateTime(meeting.startTime);
+    const workerConfirmed = meeting.confirmedByWorker;
+    const clientConfirmed = meeting.confirmedByClient;
+
+    if (meeting.status === 'CONFIRMED') {
+      return (
+        <View style={styles.meetingConfirmedBlock}>
+          <View style={styles.meetingConfirmedRow}>
+            <Ionicons name="checkmark-circle" size={16} color="#059669" />
+            <Text style={styles.meetingConfirmedText}>Entrevista confirmada</Text>
+          </View>
+          {formattedTime && <Text style={styles.meetingTime}>{formattedTime}</Text>}
+          {meeting.meetLink && (
+            <Text style={styles.meetLink}>Enlace: {meeting.meetLink}</Text>
+          )}
+        </View>
+      );
+    }
+
+    const lastProposed = meeting.lastProposedBy;
+    const iProposed = lastProposed === 'WORKER';
+
+    return (
+      <View style={styles.meetingBlock}>
+        <View style={styles.meetingPendingHeader}>
+          <Ionicons name="time-outline" size={16} color="#92400E" />
+          <Text style={styles.meetingPendingLabel}>Entrevista solicitada</Text>
+        </View>
+        {formattedTime && (
+          <Text style={styles.meetingTime}>
+            {iProposed ? 'Propusiste: ' : 'Proponen: '}{formattedTime}
+          </Text>
+        )}
+        {clientConfirmed && workerConfirmed ? null : workerConfirmed ? (
+          <Text style={styles.meetingHint}>Esperando confirmación del cliente</Text>
+        ) : (
+          <View style={styles.meetingActions}>
+            <View style={styles.meetingActionsRow}>
+              <Pressable
+                style={[styles.meetingActionHalfPress, styles.meetingConfirmBtn]}
+                onPress={() => handleConfirmMeeting(meeting._id, proposal._id)}
+                disabled={meetingLoading}
+              >
+                <Text style={styles.meetingConfirmBtnText}>
+                  {meetingLoading ? '...' : 'Aceptar horario'}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.meetingActionHalfPress, styles.meetingDeclineBtn]}
+                onPress={() => handleCancelMeeting(meeting._id)}
+                disabled={meetingLoading}
+              >
+                <Text style={styles.meetingDeclineBtnText}>Rechazar</Text>
+              </Pressable>
+            </View>
+            <Pressable
+              style={styles.meetingAltBtn}
+              onPress={() => setPickerTarget({ meetingId: meeting._id, proposalId: proposal._id })}
+              disabled={meetingLoading}
+            >
+              <Text style={styles.meetingAltBtnText}>Proponer hora</Text>
+            </Pressable>
+          </View>
+        )}
+      </View>
+    );
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
@@ -185,7 +331,7 @@ export function WorkerOffersScreen() {
             return (
               <Pressable
                 key={proposal._id || proposal.id}
-                onPress={() => setSelectedRequest(proposal?.serviceRequestId || null)}
+                onPress={() => router.push(`/my-offers/${proposal._id}` as any)}
                 style={styles.offerCard}
               >
                 <View style={styles.cardTop}>
@@ -200,6 +346,7 @@ export function WorkerOffersScreen() {
                   <Text style={styles.priceText}>{formatMoney(proposal?.price)}</Text>
                   <Text style={styles.detailText}>Ver detalle</Text>
                 </View>
+                {renderMeeting(proposal)}
               </Pressable>
             );
           })}
@@ -212,12 +359,11 @@ export function WorkerOffersScreen() {
         </View>
       )}
 
-      <WorkerRequestDetailsModal
-        open={!!selectedRequest}
-        onClose={() => setSelectedRequest(null)}
-        job={selectedRequest}
-        alreadyOffered
-        onOffer={() => {}}
+      <DateTimePickerModal
+        visible={!!pickerTarget}
+        onClose={() => setPickerTarget(null)}
+        onConfirm={handleProposeTime}
+        title="Proponé otro horario para la entrevista"
       />
     </ScrollView>
   );
@@ -365,5 +511,107 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     textAlign: 'center',
+  },
+  meetingBlock: {
+    marginTop: 10,
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 6,
+  },
+  meetingConfirmedBlock: {
+    marginTop: 10,
+    backgroundColor: '#D1FAE5',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 6,
+  },
+  meetingPendingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  meetingPendingLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#92400E',
+  },
+  meetingTime: {
+    fontSize: 12,
+    color: '#92400E',
+    fontWeight: '600',
+  },
+  meetingHint: {
+    fontSize: 12,
+    color: '#A16207',
+    fontStyle: 'italic',
+  },
+  meetingActions: {
+    gap: 8,
+    marginTop: 4,
+  },
+  meetingActionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  meetingActionHalfPress: {
+    flex: 1,
+  },
+  meetingConfirmBtn: {
+    backgroundColor: '#059669',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  meetingConfirmBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  meetingAltBtn: {
+    borderWidth: 1,
+    borderColor: '#D97706',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  meetingAltBtnText: {
+    color: '#92400E',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  meetingDeclineBtn: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  meetingDeclineBtnText: {
+    color: '#4B5563',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  meetingConfirmedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  meetingConfirmedText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  meetLink: {
+    fontSize: 11,
+    color: '#2563EB',
+    fontWeight: '600',
   },
 });

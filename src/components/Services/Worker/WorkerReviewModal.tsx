@@ -53,7 +53,7 @@ export function WorkerReviewModal({
     const clientId = getId(service?.clientId);
 
     if (!serviceId || !workerId || !clientId) {
-      setError('Faltan datos para crear la resena.');
+      setError('Faltan datos para crear la reseña.');
       return;
     }
 
@@ -76,14 +76,14 @@ export function WorkerReviewModal({
       onCreated?.(response?.data?.review);
       onClose();
     } catch (submitError: any) {
-      setError(submitError?.response?.data?.message || 'No se pudo enviar la resena.');
+      setError(submitError?.response?.data?.message || 'No se pudo enviar la reseña.');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Dejar resena al cliente" size="lg">
+    <Modal open={open} onClose={onClose} title="Dejar reseña al cliente" size="lg">
       <View style={styles.content}>
         <View>
           <Text style={styles.label}>Cliente</Text>
@@ -131,7 +131,7 @@ export function WorkerReviewModal({
             Cancelar
           </Button>
           <Button onPress={handleSubmit} loading={submitting} fullWidth>
-            Enviar resena
+            Enviar reseña
           </Button>
         </View>
       </View>

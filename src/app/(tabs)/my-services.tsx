@@ -1,5 +1,5 @@
 import React from 'react';
-import { PlaceholderScreen } from '../../components/dashboard/PlaceholderScreen';
+import { ClientMyServices } from '../../components/dashboard/ClientMyServices';
 import { WorkerServicesScreen } from '../../components/Services/Worker/WorkerServicesScreen';
 import { useIsClient } from '../../store/authStore';
 
@@ -10,10 +10,5 @@ export default function MyServicesScreen() {
     return <WorkerServicesScreen />;
   }
 
-  return (
-    <PlaceholderScreen
-      title="Mis Contratos"
-      subtitle="Revisa el estado de tus contratos activos y finalizados."
-    />
-  );
+  return <ClientMyServices />;
 }
