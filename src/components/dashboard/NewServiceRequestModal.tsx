@@ -339,7 +339,7 @@ export function NewServiceRequestModal({ open, onClose, onCreated }: NewServiceR
       {/* Presupuesto */}
       <View style={styles.fieldRow}>
         <View style={styles.fieldHalf}>
-          <Text style={styles.label}>Presupuesto Mín. (Q) *</Text>
+          <Text style={styles.label} numberOfLines={1}>Presupuesto Mín. (Q) *</Text>
           <TextInput
             style={styles.input}
             value={form.budgetMin}
@@ -351,7 +351,7 @@ export function NewServiceRequestModal({ open, onClose, onCreated }: NewServiceR
           {errors.budgetMin && <Text style={styles.error}>{errors.budgetMin}</Text>}
         </View>
         <View style={styles.fieldHalf}>
-          <Text style={styles.label}>Presupuesto Máx. (Q) *</Text>
+          <Text style={styles.label} numberOfLines={1}>Presupuesto Máx. (Q) *</Text>
           <TextInput
             style={styles.input}
             value={form.budgetMax}
@@ -421,6 +421,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: WD.darkerGray,
+    minHeight: 18,
   },
   input: {
     borderWidth: 1,

@@ -45,3 +45,13 @@ export const createReport = async (data: any) => await axiosUser.post('/reports'
 
 export const getCreatedReports = async (userId: string) =>
   await axiosUser.get(`/reports/created/${userId}`);
+
+// ================= FAVORITES =================
+export const addFavorite = async (clientId: string, workerId: string) =>
+  axiosUser.post('/Favorite', { clientId, workerId });
+
+export const removeFavorite = async (clientId: string, workerId: string) =>
+  axiosUser.delete(`/Favorite/${clientId}/${workerId}`);
+
+export const getMyFavorites = async (clientId: string) =>
+  axiosUser.get(`/Favorite/client/${clientId}`);
