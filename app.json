@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "workdispatch_mobile_user",
+    "name": "WorkDispatch",
     "slug": "workdispatch_mobile_user",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,9 +8,10 @@
     "scheme": "workdispatchmobileuser",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/images/icon.png"
     },
     "android": {
+      "package": "com.workdispatch.mobileuser",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -41,6 +42,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "2602e77c-4b01-4160-8bfb-6b3955427810"
+      }
     }
   }
 }
