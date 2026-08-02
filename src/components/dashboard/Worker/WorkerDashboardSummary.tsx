@@ -1,14 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Toast from 'react-native-toast-message';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { getMeetingsByUser } from '../../../api/meetings';
+import { getWorkerProposals, getWorkerServices } from '../../../api/workerDashboard';
 import { WD } from '../../../constants/theme';
+import type { User } from '../../../types/auth';
+import { getMeetingReminders, getWorkerLogReminders } from '../../../utils/reminders';
 import { Card, CardContent } from '../../ui/Card';
 import { DashboardStats, type StatItem } from '../DashboardStats';
-import { getWorkerProposals, getWorkerServices } from '../../../api/workerDashboard';
-import type { User } from '../../../types/auth';
-import { getMeetingsByUser } from '../../../api/meetings';
-import { getMeetingReminders, getWorkerLogReminders } from '../../../utils/reminders';
 import { RemindersCard } from '../RemindersCard';
 
 type AnyRecord = Record<string, any>;
@@ -133,7 +132,7 @@ export function WorkerDashboardSummary({ user }: { user: User | null }) {
   ];
 
   const reminders = useMemo(
-    () => [...getMeetingReminders(meetings, workerId), ...getWorkerLogReminders(services)],
+    () => [...getMeetingReminders(meetings, workerId, services), ...getWorkerLogReminders(services)],
     [meetings, services, workerId]
   );
 
