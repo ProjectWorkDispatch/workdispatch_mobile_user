@@ -15,26 +15,26 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import {
-  getServiceById,
-  getServiceRequestMeeting,
-  confirmMeeting,
-  proposeAlternativeTime,
+  addWorkLog,
   cancelMeeting,
   completeService,
-  setupPlan,
-  addWorkLog,
-  editWorkLog,
   completeWorkDay,
+  confirmMeeting,
+  editWorkLog,
   getClientTrustStats,
   getReceivedReviews,
+  getServiceById,
+  getServiceRequestMeeting,
+  proposeAlternativeTime,
+  setupPlan,
 } from '../../../api/workerDashboard';
 import { WD } from '../../../constants/theme';
+import { MapPicker } from '../../dashboard/MapPicker';
+import { AddWorkLogModal } from '../../ui/AddWorkLogModal';
 import { Button } from '../../ui/Button';
 import { Card, CardContent } from '../../ui/Card';
 import { DateTimePickerModal } from '../../ui/DateTimePickerModal';
 import { WorkPlanSetupModal } from '../../ui/WorkPlanSetupModal';
-import { AddWorkLogModal } from '../../ui/AddWorkLogModal';
-import { MapPicker } from '../../dashboard/MapPicker';
 
 type AnyRecord = Record<string, any>;
 
@@ -321,7 +321,7 @@ export function WorkerServiceDetail({ serviceId }: { serviceId: string }) {
     return (
       <View style={styles.center}>
         <Text style={styles.errorText}>{error || 'Servicio no encontrado'}</Text>
-        <Button onPress={() => router.back()}>Volver</Button>
+        <Button onPress={() => router.replace('/(tabs)/my-services')}>Volver</Button>
       </View>
     );
   }
@@ -367,7 +367,7 @@ export function WorkerServiceDetail({ serviceId }: { serviceId: string }) {
       {/* Back */}
       <Button
         variant="ghost"
-        onPress={() => router.back()}
+        onPress={() => router.replace('/(tabs)/my-services')}
         icon={<Ionicons name="arrow-back" size={16} color={WD.darkerGray} />}
         style={{ alignSelf: 'flex-start' }}
       >

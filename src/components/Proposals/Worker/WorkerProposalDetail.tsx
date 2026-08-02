@@ -15,19 +15,19 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import {
+  cancelMeeting,
+  confirmMeeting,
+  getClientTrustStats,
   getProposalById,
   getProposalMeeting,
-  confirmMeeting,
-  proposeAlternativeTime,
-  cancelMeeting,
-  getClientTrustStats,
   getReceivedReviews,
+  proposeAlternativeTime,
 } from '../../../api/workerDashboard';
 import { WD } from '../../../constants/theme';
+import { MapPicker } from '../../dashboard/MapPicker';
 import { Button } from '../../ui/Button';
 import { Card, CardContent } from '../../ui/Card';
 import { DateTimePickerModal } from '../../ui/DateTimePickerModal';
-import { MapPicker } from '../../dashboard/MapPicker';
 
 type AnyRecord = Record<string, any>;
 
@@ -216,7 +216,7 @@ export function WorkerProposalDetail({ proposalId }: { proposalId: string }) {
     return (
       <View style={styles.center}>
         <Text style={styles.errorText}>{error || 'Propuesta no encontrada'}</Text>
-        <Button onPress={() => router.back()}>Volver</Button>
+        <Button onPress={() => router.replace('/(tabs)/my-services')}>Volver</Button>
       </View>
     );
   }
@@ -232,7 +232,7 @@ export function WorkerProposalDetail({ proposalId }: { proposalId: string }) {
       {/* Back */}
       <Button
         variant="ghost"
-        onPress={() => router.back()}
+        onPress={() => router.replace('/(tabs)/my-services')}
         icon={<Ionicons name="arrow-back" size={16} color={WD.darkerGray} />}
         style={{ alignSelf: 'flex-start' }}
       >
